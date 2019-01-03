@@ -1,30 +1,35 @@
-use node::Node;
-use sha2::Sha256;
+use std::fmt::Display;
+use super::tree::Tree;
+use super::hash_utils::*;
 
 
-#[derive(Debug, Default)]
-pub struct MerkleTree<T> {
-    root: Node<T>,
+#[derive(Debug)]
+pub struct MerkleTree<T: ToString + Display> {
+    root: Tree<T>,
     height: usize,
-    nodes_amount: usize,
+    leaves_num: usize,    
     // pub algorithm: &'static Algorithm,
 }
 
 
-impl<T> MerkleTree<T> {
+impl<T: ToString + Display> MerkleTree<T> {
     
-    pub fn create_tree(data: Vec<T>) -> Self        
+    pub fn create_tree(data: Vec<T>) -> Self         
     {
         if data.is_empty() {
-            MerkleTree::default();
+            return MerkleTree {
+                    root: Tree::empty(empty_hash()),
+                    height: 0,
+                    leaves_num: 0,
+                };
         }
 
-        let count = data.len();
+        let leaves_num = data.len();
         let mut height = 0;
-        let mut cur = Vec::with_capacity(count);
+        let mut cur = Vec::with_capacity(leaves_num);
 
         for d in data {    // can be closure?
-            let leaf = Node::new(d);
+            let leaf = Tree::new_leaf(d);
             cur.push(leaf);
         }
 
@@ -34,25 +39,22 @@ impl<T> MerkleTree<T> {
                 if cur.len() == 1 {
                     next.push(cur.remove(0));
                 } else {
-                    let left = cur.removve(0);
+                    let left = cur.remove(0);
                     let right = cur.remove(0);
 
-                    let combined_hash = Sha256::new()
-                        .chain(left)
-                        .chain(right)
-                        .result();
+                    let combined_hash = hash_node(left.hash().unwrap(), right.hash().unwrap());
 
-                    let node = Node {
-                        hash: combined_hash.as_ref().into(),
-                        left: Some(Box::new(left)),
-                        right: Some(Box::new(right)),
+                    let node = Tree::Node {
+                        hash: combined_hash,
+                        left: Box::new(left),
+                        right: Box::new(right),
                     };
 
                     next.push(node);
                 }
             }
 
-            heigth += 1;
+            height += 1;
             cur = next;
         }
 
@@ -61,8 +63,8 @@ impl<T> MerkleTree<T> {
 
         MerkleTree {
             root,
-            heigth,
-            count,
+            height,
+            leaves_num,
         }
     }
 
@@ -70,7 +72,18 @@ impl<T> MerkleTree<T> {
 
     // }
 
-    // pub fn get_root(&self) ->  {
+    pub fn get_root(&self) -> String {
+        self.root.hash().unwrap().to_string()
+        // Sha256::digest(self.root.to_string().as_ref()).as_ref().into()
+    }
 
-    // }    
+    pub fn get_height(&self) -> usize {
+        self.height
+    }
+
+    pub fn get_leaves_num(&self) -> usize {
+        self.leaves_num
+    }
+
+
 }
