@@ -1,7 +1,9 @@
 [package]
 name = "merkle_tree"
 version = "0.1.0"
-authors = ["osuke <arget-fee.free.dgm@hotmail.co.jp>"]
+authors = ["osuke <dish230@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+sha2 = "0.8"
+blake2 = "0.8"
